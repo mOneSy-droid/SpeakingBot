@@ -13,11 +13,64 @@ from utils import safe_edit
 router = Router()
 
 
+TOKEN_ALIASES = {
+    "hamkorlik": "hamkorlik",
+    "birgalik": "hamkorlik",
+    "birgalikda": "hamkorlik",
+    "cooperation": "hamkorlik",
+    "partnership": "hamkorlik",
+    "collaboration": "hamkorlik",
+    "qabul": "qabul",
+    "admission": "qabul",
+    "acceptance": "qabul",
+    "kirish": "qabul",
+    "mezon": "mezon",
+    "mezonlari": "mezon",
+    "criteria": "mezon",
+    "requirements": "mezon",
+    "requirement": "mezon",
+    "shartlar": "mezon",
+    "talablar": "mezon",
+    "taklif": "taklif",
+    "offer": "taklif",
+    "proposal": "taklif",
+    "teklif": "taklif",
+    "stipendiya": "stipendiya",
+    "scholarship": "stipendiya",
+    "grant": "stipendiya",
+    "delegatsiya": "delegatsiya",
+    "delegation": "delegatsiya",
+    "nomidan": "nomidan",
+    "for": "nomidan",
+    "uchun": "nomidan",
+    "tomonidan": "nomidan",
+    "oquv": "oquv",
+    "dastur": "dastur",
+    "curriculum": "dastur",
+    "program": "dastur",
+    "programme": "dastur",
+    "reja": "dastur",
+    "manfaat": "manfaat",
+    "benefit": "manfaat",
+    "benefits": "manfaat",
+    "ozoaro": "ozoaro",
+    "oztaro": "ozoaro",
+}
+
+
 def normalize_text(text: str) -> str:
     text = text.strip().lower()
     text = re.sub(r"[^a-z0-9\s]", "", text)
     text = re.sub(r"\s+", " ", text)
     return text
+
+
+def normalize_tokens(text: str) -> set[str]:
+    normalized = normalize_text(text)
+    if not normalized:
+        return set()
+
+    return {TOKEN_ALIASES.get(token, token) for token in normalized.split() if token}
 
 
 def get_vocab_items() -> list[dict]:
@@ -32,6 +85,50 @@ def add_missed_word(missed_words: list[dict], item: dict | None) -> list[dict]:
         return missed_words
 
     return [*missed_words, {"word": item["word"], "translation": item["translation"]}]
+
+
+def is_translation_correct(user_answer: str | None, expected_translation: str | None) -> bool:
+    if not user_answer or not expected_translation:
+        return False
+
+    user = normalize_text(user_answer)
+    expected = normalize_text(expected_translation)
+
+    if not user or not expected:
+        return False
+
+    if user == expected:
+        return True
+
+    expected_parts = [part.strip() for part in expected.split(",") if part.strip()]
+    if user in expected_parts:
+        return True
+
+    user_tokens = normalize_tokens(user_answer)
+    expected_tokens = set()
+    for part in expected_parts:
+        expected_tokens.update(normalize_tokens(part))
+
+    if user_tokens and expected_tokens and (user_tokens & expected_tokens):
+        return True
+
+    synonyms = {
+        "hamkorlik": {"hamkorlik", "birgalik", "birgalikda ishlash", "hamkorlikda", "hamkorlik qilish"},
+        "taklif": {"taklif", "offer", "proposal", "teklif"},
+        "qabul": {"qabul", "acceptance", "kirish", "olish"},
+        "talablarga muvofiqlik": {"talablarga muvofiqlik", "muvofiqlik", "compliance", "moslik"},
+        "oquv dasturi": {"oquv dasturi", "dastur", "curriculum", "oquv rejasi"},
+        "stipendiya": {"stipendiya", "scholarship", "grant"},
+        "delegatsiya": {"delegatsiya", "delegation"},
+        "nomidan": {"nomidan", "for", "uchun", "tomonidan"},
+    }
+
+    for key, variants in synonyms.items():
+        if expected.startswith(key):
+            if user in variants:
+                return True
+
+    return False
 
 
 async def show_translation_question(callback: CallbackQuery, state: FSMContext):
@@ -67,10 +164,10 @@ async def receive_translation(message: Message, state: FSMContext):
         await message.answer("Iltimos, yangi mashqni boshlang.")
         return
 
-    expected = normalize_text(item["translation"])
-    user_answer = normalize_text(message.text)
+    expected = item["translation"]
+    user_answer = message.text
 
-    if user_answer == expected:
+    if is_translation_correct(user_answer, expected):
         await message.answer(
             f"✅ To'g'ri! <b>{item['word']}</b> -> <b>{item['translation']}</b>",
             reply_markup=kb.InlineKeyboardMarkup(
