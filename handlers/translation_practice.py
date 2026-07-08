@@ -24,6 +24,16 @@ def get_vocab_items() -> list[dict]:
     return [item for week_words in VOCAB_WEEKS.values() for item in week_words]
 
 
+def add_missed_word(missed_words: list[dict], item: dict | None) -> list[dict]:
+    if not item:
+        return missed_words
+
+    if any(existing.get("word") == item.get("word") for existing in missed_words):
+        return missed_words
+
+    return [*missed_words, {"word": item["word"], "translation": item["translation"]}]
+
+
 async def show_translation_question(callback: CallbackQuery, state: FSMContext):
     items = get_vocab_items()
     if not items:
@@ -73,7 +83,10 @@ async def receive_translation(message: Message, state: FSMContext):
         await state.clear()
         return
 
+    missed_words = add_missed_word(data.get("missed_words", []), item)
+    await state.update_data(missed_words=missed_words)
+
     await message.answer(
         f"❌ Noto'g'ri. To'g'ri javob: <b>{item['translation']}</b>\n\n"
-        "Yana urinib ko'ring — men sizni shu so'z bilan davom ettiraman."
+        f"Bu so'z sizning 'missed words' ro'yxatingizga qo'shildi ({len(missed_words)} ta)."
     )
