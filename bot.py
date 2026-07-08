@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import BOT_TOKEN
 import database as db
-from handlers import start, vocab, practice, speech, qa, progress, speaking, pronunciation, review, practice_modes, reports, settings
+from handlers import start, vocab, practice, speech, qa, progress, speaking, pronunciation, review, practice_modes, reports, settings, translation_practice
 from reminder_scheduler import init_scheduler, start_scheduler, stop_scheduler
 
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +26,7 @@ async def main():
     dp.include_router(pronunciation.router)
     dp.include_router(review.router)
     dp.include_router(practice.router)
+    dp.include_router(translation_practice.router)
     dp.include_router(speech.router)
     dp.include_router(qa.router)
     dp.include_router(speaking.router)

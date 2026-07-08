@@ -5,6 +5,7 @@ def main_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="📚 Vocabulary", callback_data="menu_vocab")],
+            [InlineKeyboardButton(text="📝 Translation Practice", callback_data="menu_translation_practice")],
             [InlineKeyboardButton(text="🎧 Talaffuz (TTS)", callback_data="menu_pronunciation")],
             [InlineKeyboardButton(text="🔁 Qayta o'rgatish", callback_data="menu_review")],
             [InlineKeyboardButton(text="🗣 Grammar Practice", callback_data="menu_practice")],

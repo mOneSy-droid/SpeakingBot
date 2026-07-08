@@ -15,3 +15,7 @@ class QAStates(StatesGroup):
 
 class SpeakingStates(StatesGroup):
     waiting_for_voice = State()
+
+
+class TranslationPracticeStates(StatesGroup):
+    waiting_for_translation = State()
