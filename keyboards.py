@@ -38,6 +38,15 @@ def vocab_word_keyboard(word: str) -> InlineKeyboardMarkup:
     )
 
 
+def translation_practice_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Bilmadim", callback_data="translation_missed")],
+            [InlineKeyboardButton(text="⬅️ Menyu", callback_data="menu_back")],
+        ]
+    )
+
+
 def practice_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

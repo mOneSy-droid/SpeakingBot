@@ -147,13 +147,33 @@ async def show_translation_question(callback: CallbackQuery, state: FSMContext):
         "Uning o'zbekcha tarjimasini yozing.\n"
         "Agar noto'g'ri yozsangiz, men to'g'ri javobni ko'rsataman va siz yana urinib ko'rasiz."
     )
-    await safe_edit(callback.message, text, reply_markup=kb.back_to_menu())
+    await safe_edit(callback.message, text, reply_markup=kb.translation_practice_keyboard())
     await callback.answer()
 
 
 @router.callback_query(F.data == "menu_translation_practice")
 async def start_translation_practice(callback: CallbackQuery, state: FSMContext):
     await show_translation_question(callback, state)
+
+
+@router.callback_query(F.data == "translation_missed")
+async def translation_missed(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    item = data.get("current_word")
+    if not item:
+        await callback.message.answer("Iltimos, yangi mashqni boshlang.")
+        await callback.answer()
+        return
+
+    missed_words = add_missed_word(data.get("missed_words", []), item)
+    await state.update_data(missed_words=missed_words)
+
+    await callback.message.answer(
+        f"❌ Siz 'Bilmadim' tugmasini bosdingiz.\n"
+        f"To'g'ri javob: <b>{item['translation']}</b>\n\n"
+        f"Bu so'z sizning missed words ro'yxatingizga qo'shildi ({len(missed_words)} ta)."
+    )
+    await callback.answer()
 
 
 @router.message(TranslationPracticeStates.waiting_for_translation)
